@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
   pthread_t *tid;
   tArgs *args;
   double inicio, fim, delta;
-  int fatia;
+  int fatia, posicao;
 
 
   if(argc<3) {
@@ -75,10 +75,12 @@ int main(int argc, char* argv[]) {
  
   pthread_mutex_init(&mutex, NULL);
 
-  fatia = (N / N_THREADS);
-  for(int i=0; i<N_THREADS; i++) {
-     (args+i)->inicio = i;
-     (args+i)->fim = i + fatia > N ? N : i + fatia;
+  fatia = (int) (N / N_THREADS);
+  posicao = 0;
+  for(int i=0; i<N_THREADS; i += 1) {
+     (args+i)->inicio = posicao;
+     (args+i)->fim = (i == N_THREADS - 1) ? N : posicao + fatia;
+     posicao += fatia;
 
 
      if(pthread_create(tid+i, NULL, tarefa, (void*) (args+i))){
