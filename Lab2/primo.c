@@ -35,12 +35,10 @@ int ehPrimo(long long int n) {
 void * tarefa(void *arg) {
   tArgs *args = (tArgs*) arg;
   int qntNumerosPrimosLocal = 0;
-  int qntPassos = 0;
 
 
   for(long long int i=args->inicio; i < args->fim; i += 1) {
      qntNumerosPrimosLocal += ehPrimo(i);
-     qntPassos++;
   }
 
 
