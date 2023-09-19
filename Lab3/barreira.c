@@ -12,16 +12,20 @@ typedef struct{
 } tArgs;
 
 void barreira(int idThread) {
+   // Início do trecho atômico
   pthread_mutex_lock(&mutex);
+  // Incrementa a variável que controla quantas threads já alcançaram a barreira
   aux += 1;
   if(aux != N_THREADS) {
+   // Se não for a última, se bloqueia
     pthread_cond_wait(&x_cond, &mutex);
   }
   else {
+   // Se for a última, libera as demais
     pthread_cond_broadcast(&x_cond);
     aux = 0;
   }
-
+   // Fim do trecho atômico
  pthread_mutex_unlock(&mutex);
 }
 
