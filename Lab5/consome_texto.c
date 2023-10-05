@@ -4,32 +4,63 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define MAX_LINHA 50
+#define MAX_LINHA 100
+#define TAM_BUFFER 5
 
 int nThreads;
-char *nomeArquivo;
-char *buffer;
-int fimDoArquivo = 0;
+char **buffer;
 
 sem_t slotVazio, slotCheio;
 sem_t mutex;
 
 
+void produtor(char *string) {
+    static int in = 0;
+
+    //Verifica se existem espaços vazios
+    sem_wait(&slotVazio);
+    //Verifica se o lock está disponível
+    sem_wait(&mutex);
+
+    //Aloca memória para a próxima linha no buffer
+    buffer[in] = (char *)malloc(sizeof(char) * MAX_LINHA);
+    //Copia a linha para o buffer
+    strcpy(buffer[in], string);
+    //Incrementa in
+    in = (in + 1) % TAM_BUFFER;
+
+    //Dá o sinal que mais uma posição ficou cheia
+    sem_post(&slotCheio);
+    //Devolve o mutex
+    sem_post(&mutex);
+
+}
+
+void consumidor() {
+    static int in = 0;
+    char *linha;
+
+    //Verifica se possui algo no buffer para ser impresso
+    sem_wait(&slotCheio);
+    //Verifica se o lock está disponível
+    sem_wait(&mutex);
+
+    //Le a linha
+    linha = buffer[in];
+    printf("%s", linha);
+    //Incrementa in
+    in = (in + 1) % TAM_BUFFER;
+
+    //Libera o produtor para escrever
+    sem_post(&slotVazio);
+    //Devolve o lock
+    sem_post(&mutex);
+}
+
 //Função para as threads consumidoras
 void *tarefa() {
-    while(!fimDoArquivo) {
-        //Verifica se possui algo no buffer para ser impresso
-        sem_wait(&slotCheio);
-        //Verifica se o lock está disponível
-        sem_wait(&mutex);
-
-        //Printa a linha
-        printf("%s", buffer);
-
-        //Libera o produtor para escrever
-        sem_post(&slotVazio);
-        //Devolve o lock
-        sem_post(&mutex);
+    while(1) {
+        consumidor();
     }
 
     pthread_exit(NULL);
@@ -39,9 +70,10 @@ void *tarefa() {
 int main(int argc, char* argv[]) {
     pthread_t *tid;
     FILE *arquivo;
+    char *linha;
 
-    //Inicializando variáveis de semáforo
-    sem_init(&slotVazio, 0, 1);
+    //Inicializando variáveis de semáforo, começamos com tamanho do buffer livres e nenhum cheio
+    sem_init(&slotVazio, 0, TAM_BUFFER);
     sem_init(&slotCheio, 0, 0);
     sem_init(&mutex, 0, 1);
 
@@ -54,11 +86,22 @@ int main(int argc, char* argv[]) {
 
     //Recebendo os argumentos
     nThreads = atoi(argv[1]);
-    nomeArquivo = argv[2];
+
+    //Abrindo arquivo
+    arquivo = fopen(argv[2], "r");
+
+    // Verifica se o arquivo foi aberto com sucesso
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo");
+        return 1;
+    }
 
     //Alocando as variáveis
-    tid = malloc(sizeof(pthread_t) * nThreads);
-    buffer = malloc(sizeof(char) * MAX_LINHA);
+    tid = (pthread_t *) malloc(sizeof(pthread_t) * nThreads);
+    linha = (char* )malloc(sizeof(char) * MAX_LINHA);
+    buffer = (char**) malloc(sizeof(char *) * TAM_BUFFER);
+
+    //Verificando erros na alocação
     if(tid == NULL || buffer == NULL) { 
         printf("--ERRO: malloc()\n"); return 2;
     }
@@ -71,35 +114,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    //Abrindo arquivo
-    arquivo = fopen(nomeArquivo, "r");
-
-    // Verifica se o arquivo foi aberto com sucesso
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo");
-        return 1;
-    }
-
     // Lê o arquivo linha por linha
-    while (!feof(arquivo)) {
-        //Verifica se tem espaço vazio e escreve de maneira atômica
-        sem_wait(&slotVazio);
-        sem_wait(&mutex);
-
-        //Escreve a próxima linha no buffer
-        fgets(buffer, sizeof(buffer), arquivo);
-
-        sem_post(&slotCheio);
-        sem_post(&mutex);
+    while (fgets(linha, MAX_LINHA, arquivo)) {
+        produtor(linha);
     }
-
-    //Espera um pouco e decreta o fim do arquivo, o que acarretará no fim das threads
-    sleep(1);
-    fimDoArquivo = 1;
 
     // Fecha o arquivo
     fclose(arquivo);
 
-    free(tid);
     pthread_exit(NULL);
 }
