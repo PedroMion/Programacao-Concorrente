@@ -7,7 +7,7 @@
 #define MAX_LINHA 100
 #define TAM_BUFFER 5
 
-int nThreads;
+int nThreads, fimArquivo = 0, linhasPrintadas = 0;
 char **buffer;
 
 sem_t slotVazio, slotCheio;
@@ -42,6 +42,10 @@ void consumidor() {
 
     //Verifica se possui algo no buffer para ser impresso
     sem_wait(&slotCheio);
+
+    //Verifica se já acabou
+    if(fimArquivo) return;
+
     //Verifica se o lock está disponível
     sem_wait(&mutex);
 
@@ -50,6 +54,8 @@ void consumidor() {
     printf("%s", linha);
     //Incrementa in
     in = (in + 1) % TAM_BUFFER;
+    //Incrementa linhas printadas
+    linhasPrintadas++;
 
     //Libera o produtor para escrever
     sem_post(&slotVazio);
@@ -59,7 +65,7 @@ void consumidor() {
 
 //Função para as threads consumidoras
 void *tarefa() {
-    while(1) {
+    while(fimArquivo == 0) {
         consumidor();
     }
 
@@ -68,6 +74,7 @@ void *tarefa() {
 
 
 int main(int argc, char* argv[]) {
+    int linhasLidas = 0;
     pthread_t *tid;
     FILE *arquivo;
     char *linha;
@@ -116,11 +123,29 @@ int main(int argc, char* argv[]) {
 
     // Lê o arquivo linha por linha
     while (fgets(linha, MAX_LINHA, arquivo)) {
+        linhasLidas++;
         produtor(linha);
+    }
+    //Espera terminar de ler
+    while(linhasPrintadas < linhasLidas);
+    fimArquivo = 1;
+
+    //Liberando possíveis threads presas
+    for(int i = 0; i < nThreads; i++) {
+        sem_post(&slotCheio);
+    }
+
+    //Fazendo join
+    for(int i=0; i<nThreads; i++) {
+        pthread_join(*(tid+i), NULL);
     }
 
     // Fecha o arquivo
     fclose(arquivo);
+
+    //Liberando as variáveis
+    free(tid);
+    free(buffer);
 
     pthread_exit(NULL);
 }
