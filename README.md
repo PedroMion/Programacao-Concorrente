@@ -30,3 +30,12 @@ Minha implementação:    4.3s
 Sendo assim, percebo uma diferença de tempo incomum e que não deveria estar acontecendo (Talvez por alguma questão da minha máquina).
 Os tempos das implementações com minhas funções e do phtreads ficou semelhante, como era de se esperar, porém, o tempo de execução para o
 lock apenas não deveria ter ficado tão baixo em comparação aos outros
+
+## Laboratório 6:
+
+Para verificar o funcionamento da atividade, compile o arquivo LeitorEscritor.java e depois execute redirecionando a saída para o arquivo log.py. Depois, basta executar o arquivo log.py.
+
+javac LeitorEscritor.java
+java LeitorEscritor > log.py
+
+Executar log.py
