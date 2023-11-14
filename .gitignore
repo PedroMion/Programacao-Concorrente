@@ -16,3 +16,7 @@ Lab6/cods-lab6/verificaLE.py
 Lab6/cods-lab6/LeitorEscritor.java
 Lab6/OlaThread.java
 Lab6/TIncrementoBase.java
+Lab8/cods-lab8/MyPool.java
+Lab8/cods-lab8/TAtomicIncremento.java
+Lab8/cods-lab8/TIncremento.java
+Lab8/cods-lab8/TSyncIncremento.java
