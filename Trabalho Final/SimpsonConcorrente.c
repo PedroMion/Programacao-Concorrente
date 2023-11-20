@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
+#include "timer.h"
 
 int N_THREADS = 4;
 double resultado;
@@ -17,7 +18,7 @@ typedef struct{
 
 
 double funcao(double x) {
-   return 2*x;
+   return 0.0001;
 }
 
 
@@ -56,7 +57,10 @@ int main(int argc, char* argv[]) {
     pthread_t *tid;
     infosIntegracao* infos;
     double limiteSuperior, limiteInferior, diferenca;
+    double inicio, fim, delta;
     int quantidadeIteracoes;
+
+    GET_TIME(inicio);
 
     tid = (pthread_t*) malloc(sizeof(pthread_t)*N_THREADS);
     if(tid==NULL) {puts("ERRO--malloc"); return 2;}
@@ -66,16 +70,16 @@ int main(int argc, char* argv[]) {
 
     pthread_mutex_init(&mutex, NULL);
 
-    limiteInferior = 10;
-    limiteSuperior = 20;
-    quantidadeIteracoes = 100;
+    limiteInferior = 0;
+    limiteSuperior = 10000000;
+    quantidadeIteracoes = 10000000;
 
     resultado = 0;
     diferenca = (limiteSuperior - limiteInferior) / 4;
     for(int i = 0; i < N_THREADS; i++) {
         (infos + i)->limiteInferior = limiteInferior + (i * diferenca);
         (infos + i)->limiteSuperior = limiteInferior + ((i+1) * diferenca);
-        (infos + i)->quantidadeIteracoes = quantidadeIteracoes;
+        (infos + i)->quantidadeIteracoes = ceil(quantidadeIteracoes/N_THREADS);
 
         if(pthread_create(tid+i, NULL, regraDeSimpsonConcorrente, (void*) (infos + i))){
             puts("ERRO--pthread_create"); return 3;
@@ -86,11 +90,14 @@ int main(int argc, char* argv[]) {
         pthread_join(*(tid+i), NULL);
     }
 
+    GET_TIME(fim);
+    delta = fim - inicio;
     pthread_mutex_destroy(&mutex);
 
     free(tid);
 
     printf("Valor da função: %lf\n", resultado);
+    printf("Tempo de execução concorrente: %lfs\n", delta);
 
    return 0;
 }

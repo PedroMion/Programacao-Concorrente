@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "timer.h"
 
 
 typedef struct{
@@ -12,7 +13,7 @@ typedef struct{
 
 
 double funcao(double x) {
-   return 2*x;
+   return 0.0001;
 }
 
 
@@ -45,19 +46,24 @@ double regraDeSimpsonSequencial(infosIntegracao infos) {
 int main(int argc, char* argv[]) {
     infosIntegracao infos;
     double limiteSuperior, limiteInferior, resultado;
+    double inicio, fim, delta;
     int quantidadeIteracoes;
 
-    limiteInferior = 10;
-    limiteSuperior = 20;
-    quantidadeIteracoes = 100;
+    limiteInferior = 0;
+    limiteSuperior = 10000000;
+    quantidadeIteracoes = 10000000;
 
     infos.limiteInferior = limiteInferior;
     infos.limiteSuperior = limiteSuperior;
     infos.quantidadeIteracoes = quantidadeIteracoes;
 
+    GET_TIME(inicio);
     resultado = regraDeSimpsonSequencial(infos);
+    GET_TIME(fim);
+    delta = fim - inicio;
 
     printf("Valor da função: %lf\n", resultado);
+    printf("Tempo de execução sequencial: %lfs\n", delta);
 
    return 0;
 }
