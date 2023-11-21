@@ -4,7 +4,7 @@
 #include <math.h>
 #include "timer.h"
 
-int N_THREADS = 4;
+int N_THREADS = 3;
 double resultado;
 pthread_mutex_t mutex;
 
@@ -18,7 +18,7 @@ typedef struct{
 
 
 double funcao(double x) {
-   return 0.0001;
+   return (2*x*x*x) + (3*x*x);
 }
 
 
@@ -48,6 +48,7 @@ void * regraDeSimpsonConcorrente(void *arg) {
     pthread_mutex_lock(&mutex);
     resultado += resultadoLocal;
     pthread_mutex_unlock(&mutex);
+    printf("Resultado local para a=%lf, b=%lf e n=%d: %lf\n", infos->limiteInferior, infos->limiteSuperior, infos->quantidadeIteracoes, resultadoLocal);
 
     pthread_exit(NULL);
 }
@@ -71,15 +72,15 @@ int main(int argc, char* argv[]) {
     pthread_mutex_init(&mutex, NULL);
 
     limiteInferior = 0;
-    limiteSuperior = 10000000;
-    quantidadeIteracoes = 10000000;
+    limiteSuperior = 50;
+    quantidadeIteracoes = 100;
 
     resultado = 0;
-    diferenca = (limiteSuperior - limiteInferior) / 4;
+    diferenca = (limiteSuperior - limiteInferior) / N_THREADS;
     for(int i = 0; i < N_THREADS; i++) {
-        (infos + i)->limiteInferior = limiteInferior + (i * diferenca);
-        (infos + i)->limiteSuperior = limiteInferior + ((i+1) * diferenca);
-        (infos + i)->quantidadeIteracoes = ceil(quantidadeIteracoes/N_THREADS);
+        (infos + i)->limiteInferior = ceil(limiteInferior + (i * diferenca));
+        (infos + i)->limiteSuperior = ceil(limiteInferior + ((i+1) * diferenca));
+        (infos + i)->quantidadeIteracoes = 2*((infos + i)->limiteSuperior - (infos + i)->limiteInferior);
 
         if(pthread_create(tid+i, NULL, regraDeSimpsonConcorrente, (void*) (infos + i))){
             puts("ERRO--pthread_create"); return 3;

@@ -13,7 +13,7 @@ typedef struct{
 
 
 double funcao(double x) {
-   return 0.0001;
+   return (2*x*x*x) + (3*x*x);
 }
 
 
@@ -50,8 +50,8 @@ int main(int argc, char* argv[]) {
     int quantidadeIteracoes;
 
     limiteInferior = 0;
-    limiteSuperior = 10000000;
-    quantidadeIteracoes = 10000000;
+    limiteSuperior = 8;
+    quantidadeIteracoes = 15;
 
     infos.limiteInferior = limiteInferior;
     infos.limiteSuperior = limiteSuperior;
